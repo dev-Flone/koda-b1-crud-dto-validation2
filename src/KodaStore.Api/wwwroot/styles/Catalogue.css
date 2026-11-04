@@ -60,17 +60,44 @@ tbody tr:last-child td:last-child {
     border-bottom-right-radius: 8px;
 }
 
-button {
-    letter-spacing: 1px;
-    border: 1px solid #005a32;
+.add-button, .edit-button, .delete-button {
     color: white;
-    border-radius: 8px;
-    background-color: #238B45;
-    padding: 12px 24px;
     width: fit-content;
     cursor: pointer;
+    padding: 12px 24px;
+    border-radius: 8px;
+    border: 0;
 }
 
-button:hover {
+.add-button {
+    letter-spacing: 1px;
+    border: 1px solid #005a32;
+    background-color: #238B45;
+}
+
+.add-button:hover {
     background-color: #005a32;
+}
+
+.action-button {
+    display: flex;
+    gap: 1rem;
+}
+
+.edit-button {
+    padding: 12px 24px;
+    background-color: #999;
+}
+
+.edit-button:hover {
+    background-color: #666;
+}
+
+.delete-button {
+    background-color: red;
+    padding: 12px 24px;
+}
+
+.delete-button:hover {
+    background-color: darkred;
 }

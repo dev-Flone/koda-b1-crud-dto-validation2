@@ -4,10 +4,11 @@ namespace KodaStore.Api.Services;
 
 public interface IProductService
 {
-    IReadOnlyList<ProductResponse> GetAll();
-    ProductResponse? GetByCode(string productCode);
-    ProductResponse? Create(CreateProductRequest request);
-    ProductResponse? Update(string productCode, UpdateProductRequest request);
-    bool Delete(string productCode);
+    Task<IReadOnlyList<ProductResponse>> GetAllAsync(CancellationToken cancellationToken);
+    Task<ProductResponse?> GetByCodeAsync(string productCode, CancellationToken cancellationToken);
+    Task<ProductResponse?> CreateAsync(ProductRequest request, CancellationToken cancellationToken);
+    Task<ProductResponse?> UpdateAsync(string productCode, UpdateProductRequest request, CancellationToken cancellationToken);
+
+    Task<bool> DeleteAsync(string productCode, CancellationToken cancellationToken);
 
 }
