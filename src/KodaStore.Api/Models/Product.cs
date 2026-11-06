@@ -2,6 +2,7 @@ namespace KodaStore.Api.Models;
 
 public sealed class Product
 {
+    public int CustomerId { get; }
     public string ProductCode { get; }
     public string Name { get; }
 
@@ -10,8 +11,12 @@ public sealed class Product
 
     public string Category { get; }
 
-    public Product(string productCode, string name, long price, int stock, string category)
+    public Product(int customerId, string productCode, string name, long price, int stock, string category)
     {
+        if (customerId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(customerId), "Customer ID must be positive.");
+        }
         if (string.IsNullOrWhiteSpace(productCode))
         {
             throw new ArgumentException("Product code is required.", nameof(productCode));
@@ -28,13 +33,12 @@ public sealed class Product
         {
             throw new ArgumentException("Stock cannot be negative.", nameof(stock));
         }
-        {
-        }
         if (string.IsNullOrWhiteSpace(category))
         {
             throw new ArgumentException("Category is required.", nameof(category));
         }
 
+        CustomerId = customerId;
         ProductCode = productCode;
         Name = name;
         Price = price;

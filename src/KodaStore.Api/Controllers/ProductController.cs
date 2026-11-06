@@ -1,7 +1,6 @@
 using KodaStore.Api.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using KodaStore.Api.Services;
-using KodaStore.Api.Models;
 
 namespace KodaStore.Api.Controllers;
 
@@ -13,9 +12,8 @@ public sealed class ProductController(IProductService service) : ControllerBase
     private readonly IProductService _service = service;
 
     [HttpGet]
-    [ProducesResponseType(
-         typeof(IReadOnlyList<ProductResponse>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<Product>>> GetAll(CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(IReadOnlyList<ProductResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<ProductResponse>>> GetAll(CancellationToken cancellationToken)
     {
         var products = await _service.GetAllAsync(cancellationToken);
         return Ok(products);
@@ -24,9 +22,9 @@ public sealed class ProductController(IProductService service) : ControllerBase
     [HttpGet("{productCode}")]
     [ProducesResponseType(typeof(ProductResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public ActionResult<ProductResponse> GetByCode([FromRoute] string productCode, CancellationToken cancellationToken)
+    public async Task<ActionResult<ProductResponse>> GetByCode([FromRoute] string productCode, CancellationToken cancellationToken)
     {
-        var product = _service.GetByCodeAsync(productCode, cancellationToken);
+        var product = await _service.GetByCodeAsync(productCode, cancellationToken);
 
         return product is null ? Problem(statusCode: StatusCodes.Status404NotFound, title: "Product not found") : Ok(product);
     }
@@ -34,6 +32,7 @@ public sealed class ProductController(IProductService service) : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(ProductResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ProductResponse>> Create([FromBody] ProductRequest request, CancellationToken cancellationToken)
     {
         try
@@ -42,7 +41,7 @@ public sealed class ProductController(IProductService service) : ControllerBase
 
             if (created is null)
             {
-                return Problem(statusCode: StatusCodes.Status409Conflict, title: "Product code already exist.");
+                return Problem(statusCode: StatusCodes.Status409Conflict, title: "Product code already exists.");
             }
             return CreatedAtAction(nameof(GetByCode), new { productCode = created.ProductCode }, created);
         }

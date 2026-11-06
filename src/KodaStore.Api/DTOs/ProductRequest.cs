@@ -3,6 +3,9 @@ using System.ComponentModel.DataAnnotations;
 namespace KodaStore.Api.DTOs;
 
 public record ProductRequest(
+    [Required, Range(1, int.MaxValue)]
+    int CustomerId,
+
     [Required, StringLength(30)]
     string ProductCode,
 

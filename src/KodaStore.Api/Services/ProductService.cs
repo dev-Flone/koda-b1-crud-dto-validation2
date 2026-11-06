@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using KodaStore.Api.DTOs;
 using KodaStore.Api.Models;
 using KodaStore.Api.Repositories;
@@ -12,7 +11,7 @@ public sealed class ProductService(IProductRepository repository) : IProductServ
     // CREATE
     public async Task<ProductResponse?> CreateAsync(ProductRequest request, CancellationToken cancellationToken)
     {
-        var product = new Product(request.ProductCode, request.Name, request.Price, request.Stock, request.Category);
+        var product = new Product(request.CustomerId, request.ProductCode, request.Name, request.Price, request.Stock, request.Category);
 
         var created = await _repository.TryAddAsync(product, cancellationToken);
 
@@ -48,7 +47,7 @@ public sealed class ProductService(IProductRepository repository) : IProductServ
     // UPDATE
     public async Task<ProductResponse?> UpdateAsync(string productCode, UpdateProductRequest request, CancellationToken cancellationToken)
     {
-        var product = new Product(productCode, request.Name, request.Price, request.Stock, request.Category);
+        var product = new Product(request.CustomerId, productCode, request.Name, request.Price, request.Stock, request.Category);
 
         var updated = await _repository.TryUpdateAsync(product, cancellationToken);
 

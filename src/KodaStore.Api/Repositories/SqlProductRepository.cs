@@ -12,7 +12,7 @@ public class SqlProductRepository(IConfiguration configuration) : IProductReposi
     public async Task<IReadOnlyList<Product>> GetAllAsync(CancellationToken cancellationToken)
     {
         const string sql = """"
-            SELECT ProductCode, Name, Price, Stock, Category
+            SELECT CustomerId, ProductCode, Name, Price, Stock, Category
             FROM dbo.Product
             ORDER BY ProductCode DESC;
         """";
@@ -36,7 +36,7 @@ public class SqlProductRepository(IConfiguration configuration) : IProductReposi
     public async Task<Product?> GetByCodeAsync(string productCode, CancellationToken cancellationToken)
     {
         const string sql = """
-            SELECT Name, Price, Stock, Category
+            SELECT CustomerId, ProductCode, Name, Price, Stock, Category
             FROM dbo.Product
             WHERE ProductCode = @productCode
         """;
@@ -58,8 +58,8 @@ public class SqlProductRepository(IConfiguration configuration) : IProductReposi
     public async Task<bool> TryAddAsync(Product product, CancellationToken cancellationToken)
     {
         const string sql = """
-            INSERT INTO dbo.Product(ProductCode, Name, Price, Stock, Category)
-            VALUES (@productCode, @name, @price, @stock, @category);
+            INSERT INTO dbo.Product(CustomerId, ProductCode, Name, Price, Stock, Category)
+            VALUES (@customerId, @productCode, @name, @price, @stock, @category);
         """;
         await using var connection = new SqlConnection(_connetionString);
         await connection.OpenAsync(cancellationToken);
@@ -71,14 +71,13 @@ public class SqlProductRepository(IConfiguration configuration) : IProductReposi
             var affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
             return affectedRows == 1;
         }
-        catch (SqlException e) when (e.Number is 2601 or 2607)
+        catch (SqlException e) when (e.Number is 2601 or 2627)
         {
             return false;
         }
-        catch (SqlException e)
+        catch (SqlException e) when (e.Number == 547)
         {
-            Console.WriteLine($"SQL error tidak terduga: {e.Number} - {e.Message}");
-            return false;
+            throw new ArgumentException("The specified customer does not exist.", nameof(product.CustomerId), e);
         }
     }
 
@@ -103,6 +102,7 @@ public class SqlProductRepository(IConfiguration configuration) : IProductReposi
         const string sql = """
             UPDATE dbo.Product
             SET 
+                CustomerId = @customerId,
                 ProductCode = @productCode,
                 Name = @name,
                 Price = @price,
@@ -115,18 +115,26 @@ public class SqlProductRepository(IConfiguration configuration) : IProductReposi
         await connection.OpenAsync(cancellationToken);
         await using var command = new SqlCommand(sql, connection);
         AddProductParameter(command, product);
-        var affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
-        return affectedRows == 1;
+        try
+        {
+            var affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
+            return affectedRows == 1;
+        }
+        catch (SqlException e) when (e.Number == 547)
+        {
+            throw new ArgumentException("The specified customer does not exist.", nameof(product.CustomerId), e);
+        }
     }
 
+    // METHOD
     private static void AddProductCode(SqlCommand command, string productCode)
     {
         command.Parameters.Add("@productCode", SqlDbType.NVarChar, 30).Value = productCode.Trim().ToUpperInvariant();
     }
 
-    // METHOD
     private static void AddProductParameter(SqlCommand command, Product product)
     {
+        command.Parameters.Add("@customerId", SqlDbType.Int).Value = product.CustomerId;
         AddProductCode(command, product.ProductCode);
         command.Parameters.Add("@name", SqlDbType.NVarChar, 120).Value = product.Name;
         command.Parameters.Add("@stock", SqlDbType.Int).Value = product.Stock;
@@ -142,11 +150,12 @@ public class SqlProductRepository(IConfiguration configuration) : IProductReposi
     private static Product ReadProduct(SqlDataReader reader)
     {
         return new Product(
-            reader.GetString(0),
+            reader.GetInt32(0),
             reader.GetString(1),
-            reader.GetInt64(2),
-            reader.GetInt32(3),
-            reader.GetString(4)
+            reader.GetString(2),
+            reader.GetInt64(3),
+            reader.GetInt32(4),
+            reader.GetString(5)
         );
     }
 
